@@ -7,8 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Äänestyssovellus</h1>
-
+    <!-- Registration Form -->
     <div id="register">
         <h2>Rekisteröidy</h2>
         <form id="registerForm">
@@ -25,6 +24,7 @@
         </form>
     </div>
 
+    <!-- Login Form -->
     <div id="login">
         <h2>Kirjaudu sisään</h2>
         <form id="loginForm">
@@ -41,16 +41,26 @@
         </form>
     </div>
 
-    <div id="voteForm">
-        
+    <!-- Admin Panel for Poll Management -->
+    <div id="adminPanel" style="display: none;">
+        <h2>Hallinnoi Äänestyksiä</h2>
+        <form id="createPollForm">
+            <label for="pollName">Äänestyksen nimi:</label>
+            <input type="text" id="pollName" required>
+            <button type="submit">Luo Äänestys</button>
+        </form>
+        <button id="closePollBtn" style="display: none;">Sulje Äänestys</button>
+        <button id="removePollBtn" style="display: none;">Poista Äänestys</button>
     </div>
 
-    <div id="results">
-
+    <!-- Poll List -->
+    <div id="pollList" style="display: none;">
+        <h2>Avoimet Äänestykset</h2>
+        <p id="noPollsMessage" style="display: none;">Ei avoimia äänestyksiä.</p>
+        <div id="pollsContainer"></div>
     </div>
-
-
 
     <script src="script.js"></script>
+
 </body>
 </html>
