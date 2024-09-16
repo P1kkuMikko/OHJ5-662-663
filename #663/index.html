@@ -7,6 +7,50 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <h1>Äänestyssovellus</h1>
+
+    <div id="regForm">
+        <h2>Rekisteröidy</h2>
+        <form id="registerForm">
+            <label for="registerUsername">Käyttäjänimi:</label>
+            <input type="text" id="registerUsername" name="username" required>
+            <label for="registerPassword">Salasana:</label>
+            <input type="password" id="registerPassword" name="password" required>
+            <label for="registerRole">Rooli:</label>
+            <input type="radio" id="registerKayttaja" name="role" value="kayttaja" required>
+            <label for="registerKayttaja">Käyttäjä</label>
+            <input type="radio" id="registerYllapitaja" name="role" value="yllapitaja" required>
+            <label for="registerYllapitaja">Ylläpitäjä</label>
+            <button type="submit">Rekisteröidy</button>
+        </form>
+    </div>
+
+    <div id="loginForm">
+        <h2>Kirjaudu sisään</h2>
+        <form id="loginForm">
+            <label for="loginUsername">Käyttäjänimi:</label>
+            <input type="text" id="loginUsername" name="username" required>
+            <label for="loginPassword">Salasana:</label>
+            <input type="password" id="loginPassword" name="password" required>
+            <label for="loginRole">Rooli:</label>
+            <input type="radio" id="loginKayttaja" name="role" value="kayttaja" required>
+            <label for="loginKayttaja">Käyttäjä</label>
+            <input type="radio" id="loginYllapitaja" name="role" value="yllapitaja" required>
+            <label for="loginYllapitaja">Ylläpitäjä</label>
+            <button type="submit">Kirjaudu</button>
+        </form>
+    </div>
+
+    <div id="voteForm">
+        
+    </div>
+
+    <div id="results">
+
+    </div>
+
+
+
     <script src="script.js"></script>
 </body>
 </html>
