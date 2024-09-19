@@ -1,135 +1,195 @@
-let users = [];
-let polls = [];
-let currentUser = null;
+document.addEventListener('DOMContentLoaded', () => {
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    let polls = JSON.parse(localStorage.getItem('polls')) || [];
+    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-// Registration handler
-document.getElementById('registerForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const username = document.getElementById('registerUsername').value;
-    const password = document.getElementById('registerPassword').value;
-    const role = document.querySelector('input[name="role"]:checked').value;
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const username = document.getElementById('registerUsername').value;
+        const password = document.getElementById('registerPassword').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
 
-    const userExists = users.some(user => user.username === username);
+        if (users.some(user => user.username === username)) {
+            alert('Käyttäjänimi on jo olemassa.');
+            return;
+        }
 
-    if (userExists) {
-        alert('Käyttäjänimi on jo olemassa.');
-        return;
+        users.push({ username, password, role });
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Rekisteröinti onnistui!');
+        this.reset();
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
+
+        const user = users.find(user => user.username === username && user.password === password && user.role === role);
+
+        if (user) {
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            alert(`Tervetuloa, ${user.username}`);
+            document.getElementById('register').style.display = 'none';
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('pollsContainer').style.display = 'flex';
+            document.getElementById('noPollsMessage').style.display = 'none';
+
+            if (user.role === 'Admin') {
+                document.getElementById('adminPanel').style.display = 'block';
+            }
+
+            document.getElementById('logoutButtonUser').style.display = 'block';
+            loadPolls();
+        } else {
+            alert('Väärä käyttäjänimi, salasana tai rooli.');
+        }
+    });
+
+    function loadPolls() {
+        const pollContainer = document.getElementById('pollsContainer');
+        pollContainer.innerHTML = '';
+
+        if (polls.length === 0) {
+            document.getElementById('noPollsMessage').style.display = 'block';
+        } else {
+            document.getElementById('noPollsMessage').style.display = 'none';
+            polls.forEach((poll, index) => {
+                const pollElement = document.createElement('div');
+                pollElement.classList.add('poll');
+
+                const pollTitle = document.createElement('h3');
+                pollTitle.innerText = poll.name;
+                pollElement.appendChild(pollTitle);
+
+                const voteOptions = document.createElement('div');
+                voteOptions.classList.add('vote-options');
+
+                if (poll.closed) {
+                    const closedLabel = document.createElement('p');
+                    closedLabel.innerText = 'Äänestys suljettu';
+                    voteOptions.appendChild(closedLabel);
+                } else {
+                    if (!poll.votes[currentUser.username]) {
+                        const voteAButton = document.createElement('button');
+                        voteAButton.innerText = 'Äänestä A';
+                        voteAButton.onclick = () => votePoll(index, 'A');
+                        voteOptions.appendChild(voteAButton);
+
+                        const voteBButton = document.createElement('button');
+                        voteBButton.innerText = 'Äänestä B';
+                        voteBButton.onclick = () => votePoll(index, 'B');
+                        voteOptions.appendChild(voteBButton);
+                    } else {
+                        const deleteVoteButton = document.createElement('button');
+                        deleteVoteButton.innerText = 'Poista ääni';
+                        deleteVoteButton.onclick = () => deleteVote(index);
+                        voteOptions.appendChild(deleteVoteButton);
+                    }
+                }
+
+                pollElement.appendChild(voteOptions);
+                pollElement.appendChild(renderPollResult(poll));
+
+                if (currentUser.role === 'Admin') {
+                    const adminActions = document.createElement('div');
+                    adminActions.classList.add('admin-actions');
+
+                    const closePollButton = document.createElement('button');
+                    closePollButton.innerText = 'Sulje äänestys';
+                    closePollButton.onclick = () => closePoll(index);
+                    adminActions.appendChild(closePollButton);
+
+                    const removePollButton = document.createElement('button');
+                    removePollButton.innerText = 'Poista äänestys';
+                    removePollButton.onclick = () => removePoll(index);
+                    adminActions.appendChild(removePollButton);
+
+                    pollElement.appendChild(adminActions);
+                }
+
+                pollContainer.appendChild(pollElement);
+            });
+        }
     }
 
-    users.push({ username, password, role });
-    alert('Rekisteröinti onnistui!');
-    this.reset();
-});
+    function votePoll(pollIndex, option) {
+        polls[pollIndex].votes[currentUser.username] = option;
+        localStorage.setItem('polls', JSON.stringify(polls));
+        loadPolls();
+    }
 
-// Login handler
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const username = document.getElementById('loginUsername').value;
-    const password = document.getElementById('loginPassword').value;
-    const role = document.querySelector('input[name="role"]:checked').value;
+    function deleteVote(pollIndex) {
+        delete polls[pollIndex].votes[currentUser.username];
+        localStorage.setItem('polls', JSON.stringify(polls));
+        loadPolls();
+    }
 
-    const user = users.find(user => user.username === username && user.password === password);
+    function renderPollResult(poll) {
+        const totalVotes = Object.keys(poll.votes).length;
+        const votesA = Object.values(poll.votes).filter(vote => vote === 'A').length;
+        const votesB = Object.values(poll.votes).filter(vote => vote === 'B').length;
 
-    if (user && user.role === role) {
-        currentUser = user;
-        alert(`Tervetuloa, ${user.username}`);
+        const pollResultContainer = document.createElement('div');
+        pollResultContainer.classList.add('poll-result');
+        pollResultContainer.innerHTML = `
+            <div class="progress-bar">
+                <div class="progress" style="width: ${totalVotes === 0 ? 50 : (votesA / totalVotes) * 100}%;">A: ${votesA}</div>
+                <div class="progress" style="width: ${totalVotes === 0 ? 50 : (votesB / totalVotes) * 100}%;">B: ${votesB}</div>
+            </div>
+            <p>Ääniä yhteensä: ${totalVotes}</p>
+        `;
+
+        return pollResultContainer;
+    }
+
+    document.getElementById('createPollForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const pollName = document.getElementById('pollName').value;
+        polls.push({ name: pollName, votes: {}, closed: false });
+        localStorage.setItem('polls', JSON.stringify(polls));
+        this.reset();
+        loadPolls();
+    });
+
+    function closePoll(index) {
+        polls[index].closed = true;
+        localStorage.setItem('polls', JSON.stringify(polls));
+        loadPolls();
+    }
+
+    function removePoll(index) {
+        polls.splice(index, 1);
+        localStorage.setItem('polls', JSON.stringify(polls));
+        loadPolls();
+    }
+
+    document.getElementById('logoutButtonAdmin').addEventListener('click', logout);
+    document.getElementById('logoutButtonUser').addEventListener('click', logout);
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+        location.reload();
+    }
+
+    if (currentUser) {
         document.getElementById('register').style.display = 'none';
         document.getElementById('login').style.display = 'none';
+        document.getElementById('pollsContainer').style.display = 'flex';
+        document.getElementById('noPollsMessage').style.display = 'none';
 
-        if (user.role === 'Admin') {
+        if (currentUser.role === 'Admin') {
             document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('logoutButtonAdmin').style.display = 'block';
+        } else {
+            document.getElementById('logoutButtonUser').style.display = 'block';
         }
 
         loadPolls();
     } else {
-        alert('Väärä käyttäjänimi, salasana tai rooli.');
+        document.getElementById('pollsContainer').style.display = 'none';
     }
-});
-
-// Load polls
-function loadPolls() {
-    document.getElementById('pollList').style.display = 'block';
-    const pollContainer = document.getElementById('pollsContainer');
-    pollContainer.innerHTML = '';
-
-    if (polls.length === 0) {
-        document.getElementById('noPollsMessage').style.display = 'block';
-    } else {
-        document.getElementById('noPollsMessage').style.display = 'none';
-        polls.forEach((poll, index) => {
-            const pollElement = document.createElement('div');
-            pollElement.classList.add('poll');
-
-            const pollTitle = document.createElement('h3');
-            pollTitle.innerText = poll.name;
-            pollElement.appendChild(pollTitle);
-
-            const voteOptions = document.createElement('div');
-            voteOptions.classList.add('vote-options');
-
-            if (!poll.votes[currentUser.username]) {
-                const voteAButton = document.createElement('button');
-                voteAButton.innerText = 'Äänestä A';
-                voteAButton.onclick = () => votePoll(index, 'A');
-                voteOptions.appendChild(voteAButton);
-
-                const voteBButton = document.createElement('button');
-                voteBButton.innerText = 'Äänestä B';
-                voteBButton.onclick = () => votePoll(index, 'B');
-                voteOptions.appendChild(voteBButton);
-            } else {
-                const deleteVoteButton = document.createElement('button');
-                deleteVoteButton.innerText = 'Poista Ääni';
-                deleteVoteButton.onclick = () => deleteVote(index);
-                voteOptions.appendChild(deleteVoteButton);
-            }
-
-            pollElement.appendChild(voteOptions);
-            pollElement.appendChild(renderPollResult(poll));
-            pollContainer.appendChild(pollElement);
-        });
-    }
-}
-
-// Voting handler
-function votePoll(pollIndex, option) {
-    polls[pollIndex].votes[currentUser.username] = option;
-    loadPolls();
-}
-
-// Delete vote handler
-function deleteVote(pollIndex) {
-    delete polls[pollIndex].votes[currentUser.username];
-    loadPolls();
-}
-
-// Render poll result
-function renderPollResult(poll) {
-    const totalVotes = Object.keys(poll.votes).length;
-    const votesA = Object.values(poll.votes).filter(vote => vote === 'A').length;
-    const votesB = Object.values(poll.votes).filter(vote => vote === 'B').length;
-
-    const pollResultContainer = document.createElement('div');
-    pollResultContainer.innerHTML = `
-        <div class="progress-bar">
-            <div class="progress" style="width: ${totalVotes > 0 ? (votesA / totalVotes) * 100 : 0}%;">
-                A: ${votesA} ääntä
-            </div>
-        </div>
-        <div class="progress-bar">
-            <div class="progress" style="width: ${totalVotes > 0 ? (votesB / totalVotes) * 100 : 0}%;">
-                B: ${votesB} ääntä
-            </div>
-        </div>
-    `;
-    return pollResultContainer;
-}
-
-// Admin panel to create new polls
-document.getElementById('createPollForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const pollName = document.getElementById('pollName').value;
-    polls.push({ name: pollName, votes: {} });
-    loadPolls();
-    this.reset();
 });
