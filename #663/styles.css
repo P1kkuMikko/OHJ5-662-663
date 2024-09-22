@@ -37,8 +37,7 @@ h1 {
   color: #555;
 }
 
-input[type='text'],
-input[type='password'] {
+input[type="text"], input[type="password"] {
   width: calc(100% - 22px);
   padding: 10px;
   margin: 10px 0;
@@ -139,8 +138,7 @@ button:hover {
   background-color: #f44336;
 }
 
-#logoutButtonAdmin,
-#logoutButtonUser {
+#logoutButtonAdmin, #logoutButtonUser {
   background-color: #dc3545;
   color: white;
   border: none;
@@ -152,8 +150,7 @@ button:hover {
   display: block;
 }
 
-#logoutButtonAdmin:hover,
-#logoutButtonUser:hover {
+#logoutButtonAdmin:hover, #logoutButtonUser:hover {
   background-color: #c82333;
 }
 
