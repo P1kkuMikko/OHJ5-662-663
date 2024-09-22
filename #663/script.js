@@ -1,12 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-    let polls = JSON.parse(localStorage.getItem('polls')) || [];
-    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const users = JSON.parse(sessionStorage.getItem('users')) || [];
+    const polls = JSON.parse(sessionStorage.getItem('polls')) || [];
+    let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
 
-    document.getElementById('registerForm').addEventListener('submit', function (e) {
+    const getElement = (id) => document.getElementById(id);
+    const showElement = (id) => getElement(id).style.display = 'block';
+    const hideElement = (id) => getElement(id).style.display = 'none';
+
+    const registerForm = getElement('registerForm');
+    const loginForm = getElement('loginForm');
+    const createPollForm = getElement('createPollForm');
+    const logoutButtonAdmin = getElement('logoutButtonAdmin');
+    const logoutButtonUser = getElement('logoutButtonUser');
+
+    registerForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = document.getElementById('registerUsername').value;
-        const password = document.getElementById('registerPassword').value;
+        const username = getElement('registerUsername').value;
+        const password = getElement('registerPassword').value;
         const role = document.querySelector('input[name="role"]:checked').value;
 
         if (users.some(user => user.username === username)) {
@@ -15,47 +25,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         users.push({ username, password, role });
-        localStorage.setItem('users', JSON.stringify(users));
+        sessionStorage.setItem('users', JSON.stringify(users));
         alert('Rekisteröinti onnistui!');
-        this.reset();
+        registerForm.reset();
     });
 
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = document.getElementById('loginUsername').value;
-        const password = document.getElementById('loginPassword').value;
+        const username = getElement('loginUsername').value;
+        const password = getElement('loginPassword').value;
         const role = document.querySelector('input[name="role"]:checked').value;
 
         const user = users.find(user => user.username === username && user.password === password && user.role === role);
 
         if (user) {
             currentUser = user;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             alert(`Tervetuloa, ${user.username}`);
-            document.getElementById('register').style.display = 'none';
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('pollsContainer').style.display = 'flex';
-            document.getElementById('noPollsMessage').style.display = 'none';
+            hideElement('register');
+            hideElement('login');
+            showElement('pollsContainer');
+            hideElement('noPollsMessage');
 
             if (user.role === 'Admin') {
-                document.getElementById('adminPanel').style.display = 'block';
+                showElement('adminPanel');
             }
 
-            document.getElementById('logoutButtonUser').style.display = 'block';
+            showElement('logoutButtonUser');
             loadPolls();
         } else {
             alert('Väärä käyttäjänimi, salasana tai rooli.');
         }
     });
 
-    function loadPolls() {
-        const pollContainer = document.getElementById('pollsContainer');
+    const loadPolls = () => {
+        const pollContainer = getElement('pollsContainer');
         pollContainer.innerHTML = '';
 
         if (polls.length === 0) {
-            document.getElementById('noPollsMessage').style.display = 'block';
+            showElement('noPollsMessage');
         } else {
-            document.getElementById('noPollsMessage').style.display = 'none';
+            hideElement('noPollsMessage');
             polls.forEach((poll, index) => {
                 const pollElement = document.createElement('div');
                 pollElement.classList.add('poll');
@@ -113,21 +123,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 pollContainer.appendChild(pollElement);
             });
         }
-    }
+    };
 
-    function votePoll(pollIndex, option) {
+    const votePoll = (pollIndex, option) => {
         polls[pollIndex].votes[currentUser.username] = option;
-        localStorage.setItem('polls', JSON.stringify(polls));
+        sessionStorage.setItem('polls', JSON.stringify(polls));
         loadPolls();
-    }
+    };
 
-    function deleteVote(pollIndex) {
+    const deleteVote = (pollIndex) => {
         delete polls[pollIndex].votes[currentUser.username];
-        localStorage.setItem('polls', JSON.stringify(polls));
+        sessionStorage.setItem('polls', JSON.stringify(polls));
         loadPolls();
-    }
+    };
 
-    function renderPollResult(poll) {
+    const renderPollResult = (poll) => {
         const totalVotes = Object.keys(poll.votes).length;
         const votesA = Object.values(poll.votes).filter(vote => vote === 'A').length;
         const votesB = Object.values(poll.votes).filter(vote => vote === 'B').length;
@@ -143,53 +153,53 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         return pollResultContainer;
-    }
+    };
 
-    document.getElementById('createPollForm').addEventListener('submit', function (e) {
+    createPollForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const pollName = document.getElementById('pollName').value;
+        const pollName = getElement('pollName').value;
         polls.push({ name: pollName, votes: {}, closed: false });
-        localStorage.setItem('polls', JSON.stringify(polls));
-        this.reset();
+        sessionStorage.setItem('polls', JSON.stringify(polls));
+        createPollForm.reset();
         loadPolls();
     });
 
-    function closePoll(index) {
+    const closePoll = (index) => {
         polls[index].closed = true;
-        localStorage.setItem('polls', JSON.stringify(polls));
+        sessionStorage.setItem('polls', JSON.stringify(polls));
         loadPolls();
-    }
+    };
 
-    function removePoll(index) {
+    const removePoll = (index) => {
         polls.splice(index, 1);
-        localStorage.setItem('polls', JSON.stringify(polls));
+        sessionStorage.setItem('polls', JSON.stringify(polls));
         loadPolls();
-    }
+    };
 
-    document.getElementById('logoutButtonAdmin').addEventListener('click', logout);
-    document.getElementById('logoutButtonUser').addEventListener('click', logout);
-
-    function logout() {
+    const logout = () => {
         currentUser = null;
-        localStorage.removeItem('currentUser');
+        sessionStorage.removeItem('currentUser');
         location.reload();
-    }
+    };
+
+    logoutButtonAdmin.addEventListener('click', logout);
+    logoutButtonUser.addEventListener('click', logout);
 
     if (currentUser) {
-        document.getElementById('register').style.display = 'none';
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('pollsContainer').style.display = 'flex';
-        document.getElementById('noPollsMessage').style.display = 'none';
+        hideElement('register');
+        hideElement('login');
+        showElement('pollsContainer');
+        hideElement('noPollsMessage');
 
         if (currentUser.role === 'Admin') {
-            document.getElementById('adminPanel').style.display = 'block';
-            document.getElementById('logoutButtonAdmin').style.display = 'block';
+            showElement('adminPanel');
+            showElement('logoutButtonAdmin');
         } else {
-            document.getElementById('logoutButtonUser').style.display = 'block';
+            showElement('logoutButtonUser');
         }
 
         loadPolls();
     } else {
-        document.getElementById('pollsContainer').style.display = 'none';
+        hideElement('pollsContainer');
     }
 });
